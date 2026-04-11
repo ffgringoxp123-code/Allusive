@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LostRobbe/Allusive/refs/heads/main/AllusiveFullSrc%20(1).txt"))()
