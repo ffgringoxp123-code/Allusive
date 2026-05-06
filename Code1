@@ -1,0 +1,157 @@
+-- deobfuscate.lua
+-- Chạy: lua deobfuscate.lua
+
+local a = {
+    "-iNelIOdHbDNpssS9Pw=="; "}]4f9?/k"; "-HPjemvdSvMU0jM0kZVi=";
+    "}m5^c<mZqo@@I-3tTe"; "}Vj8uB>Aig[K-AKV"; "}%fnr#K8";
+    "-fRSFsAl="; "}($BelKfnb/q91V^(?BX1%'742\"4M;H(SOP?5!WnkKT'kZON',,ONf4$(hl&Lq\"J*4i#R>ID_\\QS%qh84TPs(nTckDgTcFsfTc]Vj>AgZ4ihmtm%qhFVTs8Nb`\\&S8b50/,Ts/aQi:1[o%X,ooiq1^p";
+    "}pDZ2>%kI<"; "-X76zmw=="; "-7NNKbMtwPPe5Z7du"; "}P0\":GGW\"BVmZ2";
+    "-wrPQPvP56pNuvoX4"; "}\"/[Rg\"%"; "}i&"; "}qJ)QP%+Pg";
+    "}P\\`fIKZJGf?_OUtcIQ"; "-jttCbV0YfAa="; "}`/"; "-wVSwZVSXsrdcfK==";
+    "}O0W>-[-pL)`2<_["; "}%kI3ciIahp,VeS/mVN.UiIa(F"; "-jVSRIpd+fl0qPp6xbsT=";
+    "-HHGRDtULPpVXstPUHljl7RPAjuP0sl0LsRGAwpU9ipa="; "}OW781?h2ZHVqX8<ihD";
+    "}?3P%T9m%pY"; "}9di72%+W6t(P"; "-sAOimAt6"; "-fV0LfK==";
+    "}cEVAeip>[5V<_C"; "-"; "-jttqsAOJPAOz"; "}?3PXW(C`ao";
+    "-wV0LfpdY"; "}?3Pu*(:3"; "}GRhYM%ENX"; "}?3P%)Kaa#X";
+    "}iq1^pK`:9U\"]["; "-7MNDb6a="; "}(hMbB"; "-X76QfAQ=";
+    "(uc1<\"_gq]T.N/1"; "-Z6SJZVSXsrdcfK=="; "-7RthbRY="; "-ZRzhvASX7w==";
+    "-frdJfa=="; "-woG0Ivt7sV64ZNGSsa=="; "-P6Aj460ObDUr6RvJIY==";
+    "}9RbWs\"/KB7"; "-bGd6doNcDoMsfo0e"; "}NXoA_Dh0'"; "-jMUw7lMBsa=="
+}
+
+-- Bitwise XOR implementation
+local function bxor(x, y)
+    local r, b = 0, 1
+    while x > 0 or y > 0 do
+        if (x % 2) ~= (y % 2) then r = r + b end
+        x, y, b = math.floor(x/2), math.floor(y/2), b*2
+    end
+    return r
+end
+
+-- Reverse string table
+for _, y in ipairs({{1,52},{1,11},{12,52}}) do
+    while y[1] < y[2] do
+        a[y[1]], a[y[2]], y[1], y[2] = a[y[2]], a[y[1]], y[1]+1, y[2]-1
+    end
+end
+
+-- Base64 decode table
+local b64 = {
+    z=35,K=16,["1"]=24,v=63,u=29,["2"]=4,Y=32,x=6,o=13,["8"]=1,
+    Q=40,["7"]=61,h=37,l=12,N=27,I=49,E=17,d=55,b=58,S=7,["9"]=18,
+    ["6"]=47,J=42,t=31,H=44,M=15,m=57,w=48,["/"]=34,A=30,a=0,
+    ["3"]=21,T=36,W=5,L=41,F=38,U=3,k=10,["+"]=9,p=28,R=14,r=46,
+    ["0"]=23,j=51,q=22,D=45,g=25,n=2,y=26,B=33,["5"]=20,["4"]=50,
+    P=59,e=19,C=8,V=62,c=39,O=43,f=56,G=11,Z=53,i=52,s=60,X=54
+}
+
+-- Ascii85 decode table
+local a85 = {
+    ["."]=10,O=78,["4"]=8,["'"]=44,V=81,o=1,A=3,["0"]=29,f=53,
+    J=20,u=6,n=9,['"']=75,L=18,["="]=34,["&"]=47,E=48,Q=43,k=23,
+    I=46,g=83,p=70,[";"]=80,s=15,["/"]=14,d=37,["\\"]=7,["6"]=22,
+    U=35,h=39,W=33,a=31,t=65,["^"]=30,_=67,T=57,C=38,["?"]=66,
+    ["]"]=41,r=0,["5"]=55,["#"]=17,[":"]=40,K=79,[","]=52,q=73,
+    ["3"]=16,l=25,M=54,H=27,["2"]=11,[">"]=59,D=56,c=64,["!"]=21,
+    [")"]=42,R=36,["1"]=13,j=49,["@"]=63,B=82,G=68,i=74,["-"]=28,
+    Z=26,["`"]=58,["("]=76,S=32,F=4,Y=2,["8"]=5,["+"]=51,e=45,
+    ["<"]=50,P=69,["*"]=19,m=62,N=61,X=24,["7"]=84,["["]=71,b=60,
+    ["$"]=12,["9"]=77,["%"]=72
+}
+
+-- Decode all strings
+for i=1,#a do
+    local s = a[i]
+    if type(s) == "string" and #s > 0 then
+        local prefix = s:sub(1,1)
+        local enc = s:sub(2)
+        
+        if prefix == "-" then
+            -- Base64 decode
+            local out, idx, D, V = {}, 1, 0, 0
+            while idx <= #enc do
+                local ch = enc:sub(idx,idx)
+                local val = b64[ch]
+                if val then
+                    D = D + val * (64 ^ (3 - V))
+                    V = V + 1
+                    if V == 4 then
+                        V = 0
+                        table.insert(out, string.char(
+                            math.floor(D / 65536),
+                            math.floor((D % 65536) / 256),
+                            D % 256
+                        ))
+                        D = 0
+                    end
+                elseif ch == "=" then
+                    table.insert(out, string.char(math.floor(D / 65536)))
+                    if idx < #enc and enc:sub(idx+1,idx+1) ~= "=" then
+                        table.insert(out, string.char(math.floor((D % 65536) / 256)))
+                    end
+                    break
+                end
+                idx = idx + 1
+            end
+            a[i] = table.concat(out)
+            
+        elseif prefix == "}" then
+            -- Ascii85 decode
+            local out, idx = {}, 1
+            while idx <= #enc do
+                local rem = #enc - idx + 1
+                local cl = rem >= 5 and 5 or rem
+                local val, ok = 0, (cl > 1)
+                for o = 0, 4 do
+                    if o < cl then
+                        local v = a85[enc:sub(idx+o, idx+o)]
+                        if not v then ok = false; break end
+                        val = val * 85 + v
+                    else
+                        val = val * 85 + 84
+                    end
+                end
+                if ok then
+                    local b1 = math.floor(val / 16777216) % 256
+                    local b2 = math.floor(val / 65536) % 256
+                    local b3 = math.floor(val / 256) % 256
+                    local b4 = val % 256
+                    if cl == 5 then table.insert(out, string.char(b1,b2,b3,b4))
+                    elseif cl == 4 then table.insert(out, string.char(b1,b2,b3))
+                    elseif cl == 3 then table.insert(out, string.char(b1,b2))
+                    elseif cl == 2 then table.insert(out, string.char(b1)) end
+                end
+                idx = idx + cl
+            end
+            a[i] = table.concat(out)
+        end
+    end
+end
+
+-- XOR with key 132
+local key = 132
+for i=1,#a do
+    local s = a[i]
+    if type(s) == "string" and #s > 0 then
+        local out = {}
+        for j=1,#s do
+            out[j] = string.char(bxor(string.byte(s,j), key))
+        end
+        a[i] = table.concat(out)
+    end
+end
+
+-- ==============================
+-- IN KẾT QUẢ
+-- ==============================
+print("=== DECODED STRINGS (index -> value) ===")
+for i=1,#a do
+    local idx = i - 6552
+    local val = a[i]
+    if val and #val > 0 then
+        print(string.format("J(%d) = %q", idx, val))
+    else
+        print(string.format("J(%d) = \"\"", idx))
+    end
+end
