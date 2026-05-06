@@ -1,0 +1,305 @@
+-- ============================================
+-- Deobfuscator cho Galactic Protection v1.6
+-- Chạy: lua deobfuscate.lua
+-- ============================================
+
+-- String table gốc từ script
+local a = {
+    "-iNelIOdHbDNpssS9Pw=="; "}]4f9?/k"; "-HPjemvdSvMU0jM0kZVi=";
+    "}m5^c<mZqo@@I-3tTe"; "}Vj8uB>Aig[K-AKV"; "}%fnr#K8";
+    "-fRSFsAl="; "}($BelKfnb/q91V^(?BX1%'742\"4M;H(SOP?5!WnkKT'kZON',,ONf4$(hl&Lq\"J*4i#R>ID_\\QS%qh84TPs(nTckDgTcFsfTc]Vj>AgZ4ihmtm%qhFVTs8Nb`\\&S8b50/,Ts/aQi:1[o%X,ooiq1^p";
+    "}pDZ2>%kI<"; "-X76zmw=="; "-7NNKbMtwPPe5Z7du"; "}P0\":GGW\"BVmZ2";
+    "-wrPQPvP56pNuvoX4"; "}\"/[Rg\"%"; "}i&"; "}qJ)QP%+Pg";
+    "}P\\`fIKZJGf?_OUtcIQ"; "-jttCbV0YfAa="; "}`/"; "-wVSwZVSXsrdcfK==";
+    "}O0W>-[-pL)`2<_["; "}%kI3ciIahp,VeS/mVN.UiIa(F"; "-jVSRIpd+fl0qPp6xbsT=";
+    "-HHGRDtULPpVXstPUHljl7RPAjuP0sl0LsRGAwpU9ipa="; "}OW781?h2ZHVqX8<ihD";
+    "}?3P%T9m%pY"; "}9di72%+W6t(P"; "-sAOimAt6"; "-fV0LfK==";
+    "}cEVAeip>[5V<_C"; "-"; "-jttqsAOJPAOz"; "}?3PXW(C`ao";
+    "-wV0LfpdY"; "}?3Pu*(:3"; "}GRhYM%ENX"; "}?3P%)Kaa#X";
+    "}iq1^pK`:9U\"]["; "-7MNDb6a="; "}(hMbB"; "-X76QfAQ=";
+    "(uc1<\"_gq]T.N/1"; "-Z6SJZVSXsrdcfK=="; "-7RthbRY="; "-ZRzhvASX7w==";
+    "-frdJfa=="; "-woG0Ivt7sV64ZNGSsa=="; "-P6Aj460ObDUr6RvJIY==";
+    "}9RbWs\"/KB7"; "-bGd6doNcDoMsfo0e"; "}NXoA_Dh0'"; "-jMUw7lMBsa=="
+}
+
+-- Hàm bxor nếu không có bit32
+if not bit32 then
+    function bit32.bxor(a, b)
+        local result, bitval = 0, 1
+        while a > 0 or b > 0 do
+            if (a % 2) ~= (b % 2) then result = result + bitval end
+            a, b, bitval = math.floor(a/2), math.floor(b/2), bitval * 2
+        end
+        return result
+    end
+end
+
+-- Hàm J gốc: J(J) return a[J+6552]
+local function J(idx)
+    return a[idx + 6552]
+end
+
+-- ==============================
+-- BƯỚC 1: REVERSE STRING TABLE
+-- ==============================
+print("=== BƯỚC 1: REVERSE STRING TABLE ===")
+for _, y in ipairs({{1,52},{1,11},{12,52}}) do
+    while y[1] < y[2] do
+        a[y[1]], a[y[2]], y[1], y[2] = a[y[2]], a[y[1]], y[1]+1, y[2]-1
+    end
+end
+
+-- ==============================
+-- BƯỚC 2: DECODE BASE64 & ASCII85
+-- ==============================
+print("\n=== BƯỚC 2: DECODE STRINGS ===")
+
+local R = {
+    z=35,K=16,["1"]=24,v=63,u=29,["2"]=4,Y=32,x=6,o=13,["8"]=1,
+    Q=40,["7"]=61,h=37,l=12,N=27,I=49,E=17,d=55,b=58,S=7,["9"]=18,
+    ["6"]=47,J=42,t=31,H=44,M=15,m=57,w=48,["/"]=34,A=30,a=0,
+    ["3"]=21,T=36,W=5,L=41,F=38,U=3,k=10,["+"]=9,p=28,R=14,r=46,
+    ["0"]=23,j=51,q=22,D=45,g=25,n=2,y=26,B=33,["5"]=20,["4"]=50,
+    P=59,e=19,C=8,V=62,c=39,O=43,f=56,G=11,Z=53,i=52,s=60,X=54
+}
+
+local d = {
+    ["."]=10,O=78,["4"]=8,["'"]=44,V=81,o=1,A=3,["0"]=29,f=53,
+    J=20,u=6,n=9,['"']=75,L=18,["="]=34,["&"]=47,E=48,Q=43,k=23,
+    I=46,g=83,p=70,[";"]=80,s=15,["/"]=14,d=37,["\\"]=7,["6"]=22,
+    U=35,h=39,W=33,a=31,t=65,["^"]=30,_=67,T=57,C=38,["?"]=66,
+    ["]"]=41,r=0,["5"]=55,["#"]=17,[":"]=40,K=79,[","]=52,q=73,
+    ["3"]=16,l=25,M=54,H=27,["2"]=11,[">"]=59,D=56,c=64,["!"]=21,
+    [")"]=42,R=36,["1"]=13,j=49,["@"]=63,B=82,G=68,i=74,["-"]=28,
+    Z=26,["`"]=58,["("]=76,S=32,F=4,Y=2,["8"]=5,["+"]=51,e=45,
+    ["<"]=50,P=69,["*"]=19,m=62,N=61,X=24,["7"]=84,["["]=71,b=60,
+    ["$"]=12,["9"]=77,["%"]=72
+}
+
+for i=1,#a do
+    local L = a[i]
+    if type(L) == "string" then
+        local prefix = L:sub(1,1)
+        
+        if prefix == "-" then
+            -- BASE64 DECODE
+            L = L:sub(2)
+            local out, idx, D, V = {}, 1, 0, 0
+            
+            while idx <= #L do
+                local ch = L:sub(idx, idx)
+                local val = R[ch]
+                
+                if val then
+                    D = D + val * (64 ^ (3 - V))
+                    V = V + 1
+                    if V == 4 then
+                        V = 0
+                        table.insert(out, string.char(
+                            math.floor(D / 65536),
+                            math.floor((D % 65536) / 256),
+                            D % 256
+                        ))
+                        D = 0
+                    end
+                elseif ch == "=" then
+                    table.insert(out, string.char(math.floor(D / 65536)))
+                    if idx >= #L or L:sub(idx+1, idx+1) ~= "=" then
+                        table.insert(out, string.char(math.floor((D % 65536) / 256)))
+                    end
+                    break
+                end
+                idx = idx + 1
+            end
+            a[i] = table.concat(out)
+            
+        elseif prefix == "}" then
+            -- ASCII85 DECODE
+            L = L:sub(2)
+            local out, idx = {}, 1
+            
+            while idx <= #L do
+                local remaining = (#L - idx) + 1
+                local chunk_len = remaining >= 5 and 5 or remaining
+                local val, valid = 0, (chunk_len > 1)
+                
+                for offset = 0, 4 do
+                    if offset < chunk_len then
+                        local ch = L:sub(idx + offset, idx + offset)
+                        local v = d[ch]
+                        if not v then valid = false; break end
+                        val = val * 85 + v
+                    else
+                        val = val * 85 + 84  -- padding ~
+                    end
+                end
+                
+                if valid then
+                    local b1 = math.floor(val / 16777216) % 256
+                    local b2 = math.floor(val / 65536) % 256
+                    local b3 = math.floor(val / 256) % 256
+                    local b4 = val % 256
+                    
+                    if chunk_len == 5 then
+                        table.insert(out, string.char(b1, b2, b3, b4))
+                    elseif chunk_len == 4 then
+                        table.insert(out, string.char(b1, b2, b3))
+                    elseif chunk_len == 3 then
+                        table.insert(out, string.char(b1, b2))
+                    elseif chunk_len == 2 then
+                        table.insert(out, string.char(b1))
+                    end
+                end
+                idx = idx + chunk_len
+            end
+            a[i] = table.concat(out)
+        end
+    end
+end
+
+-- ==============================
+-- BƯỚC 3: XOR VỚI KEY 132
+-- ==============================
+print("\n=== BƯỚC 3: XOR DECRYPT (KEY=132) ===")
+local xor_key = 132
+for i=1,#a do
+    local s = a[i]
+    if type(s) == "string" and #s > 0 then
+        local out = {}
+        for j=1,#s do
+            out[j] = string.char(bit32.bxor(string.byte(s, j), xor_key))
+        end
+        a[i] = table.concat(out)
+    end
+end
+
+-- ==============================
+-- KẾT QUẢ: TẤT CẢ STRINGS ĐÃ GIẢI MÃ
+-- ==============================
+print("\n" .. string.rep("=", 70))
+print("KẾT QUẢ GIẢI MÃ - DECODED STRINGS")
+print(string.rep("=", 70))
+
+for i=1,#a do
+    local idx = i - 6552
+    local val = a[i]
+    if val and #val > 0 then
+        -- Kiểm tra có phải printable không
+        local printable = true
+        for j=1,#val do
+            local b = string.byte(val, j)
+            if b < 32 or b > 126 then
+                if b ~= 10 and b ~= 13 and b ~= 9 then
+                    printable = false
+                    break
+                end
+            end
+        end
+        
+        if printable then
+            print(string.format("J(%d) = %q  -- index=%d", idx, val, i))
+        else
+            -- Hex dump cho binary data
+            local hex = {}
+            for j=1, math.min(#val, 64) do
+                hex[j] = string.format("%02X", string.byte(val, j))
+            end
+            local suffix = #val > 64 and "..." or ""
+            print(string.format("J(%d) = [BINARY %d bytes] %s%s  -- index=%d", 
+                idx, #val, table.concat(hex, " "), suffix, i))
+        end
+    else
+        print(string.format("J(%d) = (empty)  -- index=%d", idx, i))
+    end
+end
+
+-- ==============================
+-- TẠO LUA CODE CÓ THỂ DÙNG LẠI
+-- ==============================
+print("\n" .. string.rep("=", 70))
+print("LUA CODE OUTPUT (copy vào script khác)")
+print(string.rep("=", 70))
+
+print("\nlocal decoded_strings = {")
+for i=1,#a do
+    local val = a[i]
+    if val and #val > 0 then
+        local printable = true
+        for j=1,#val do
+            local b = string.byte(val, j)
+            if b < 32 or b > 126 then
+                if b ~= 10 and b ~= 13 and b ~= 9 then
+                    printable = false
+                    break
+                end
+            end
+        end
+        if printable then
+            -- Escape properly
+            local escaped = val:gsub("\\", "\\\\"):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t"):gsub("\"", "\\\"")
+            print(string.format("  [%d] = \"%s\",", i, escaped))
+        else
+            print(string.format("  [%d] = \"<BINARY %d bytes>\",", i, #val))
+        end
+    else
+        print(string.format("  [%d] = \"\",", i))
+    end
+end
+print("}")
+
+-- ==============================
+-- PHÂN TÍCH STRUCTURE
+-- ==============================
+print("\n" .. string.rep("=", 70))
+print("PHÂN TÍCH CẤU TRÚC SCRIPT")
+print(string.rep("=", 70))
+
+print("\n--- String đặc biệt (method/calls) ---")
+local method_patterns = {}
+for i=1,#a do
+    local val = a[i]
+    if val and #val > 0 then
+        -- Tìm các method call patterns
+        if val:match("^[a-zA-Z_][a-zA-Z0-9_]*$") then
+            print(string.format("  J(%d) = '%s' (identifier)", i-6552, val))
+        elseif val:match("^[%.:]") or val:match("[%.:]") then
+            print(string.format("  J(%d) = '%s' (path)", i-6552, val))
+        end
+    end
+end
+
+print("\n--- String function calls ---")
+for i=1,#a do
+    local val = a[i]
+    if val and #val > 0 then
+        if val:match("function") or val:match("loadstring") or val:match("require") then
+            print(string.format("  J(%d) = '%s'", i-6552, val))
+        end
+    end
+end
+
+-- Tìm index dùng trong VM
+print("\n--- Index references từ VM code ---")
+local vm_indices = {}
+for line in io.lines() do 
+    -- Chỉ để tham khảo
+end
+
+local index_refs = {}
+for i=1,#a do
+    local val = a[i]
+    if val and #val > 0 then
+        -- Tìm các số âm (index) trong strings đã decode
+        for num in val:gmatch("%-?%d+") do
+            local n = tonumber(num)
+            if n and n < 0 and n > -100 then
+                local target = a[n + 6552]
+                if target then
+                    print(string.format("  Index %d -> '%s' (gốc: '%s')", n, target, val))
+                end
+            end
+        end
+    end
+end
+
+print("\n=== DONE ===")
