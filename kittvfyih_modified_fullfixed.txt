@@ -2553,7 +2553,7 @@ QuestNeta = function()
 			[6] = PosQ,
 		};
 	end;
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ffgringoxp123-code/Allusive/refs/heads/main/ui_ttylol.txt"))():MakeWindow({
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ffgringoxp123-code/Allusive/refs/heads/main/ui_ttylol_pink_toggle.txt"))():MakeWindow({
     Title = "kittylol",
     SubTitle = "by Kittylol Hub",
     SaveFolder = "Maça.json"
