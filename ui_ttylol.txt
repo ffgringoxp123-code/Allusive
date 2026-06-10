@@ -23,7 +23,7 @@ local redzlib = {
 
 ["Color Theme"] = Color3.fromRGB(25, 25, 25),      
 
-["Color Text"] = Color3.fromRGB(255, 255, 255),    
+["Color Text"] = Color3.fromRGB(255, 240, 245),    
 
 ["Color Dark Text"] = Color3.fromRGB(255, 182, 193) 
         }
