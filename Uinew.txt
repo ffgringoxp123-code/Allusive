@@ -1,0 +1,2119 @@
+local Library = {}
+Library.__index = Library
+
+getgenv().GG = getgenv().GG or {
+    Flags = {},
+    Config = {
+        Primary = Color3.fromRGB(140, 110, 255),
+        Background = Color3.fromRGB(22, 24, 30),
+        Sidebar = Color3.fromRGB(18, 20, 25),
+        Border = Color3.fromRGB(60, 60, 75),
+        Text = Color3.fromRGB(220, 220, 230),
+        TextSecondary = Color3.fromRGB(150, 150, 165),
+        Icon = Color3.fromRGB(180, 180, 200),
+        Module = Color3.fromRGB(28, 30, 38),
+        ModuleBorder = Color3.fromRGB(50, 50, 65),
+        ToggleOn = Color3.fromRGB(140, 110, 255),
+        ToggleOff = Color3.fromRGB(55, 58, 70),
+        Divider = Color3.fromRGB(45, 47, 58),
+        Theme = "Default Dark"
+    }
+}
+
+local Themes = {
+    ["Default Dark"] = {
+        Primary = Color3.fromRGB(140, 110, 255),
+        Background = Color3.fromRGB(22, 24, 30),
+        Sidebar = Color3.fromRGB(18, 20, 25),
+        Border = Color3.fromRGB(60, 60, 75),
+        Text = Color3.fromRGB(220, 220, 230),
+        TextSecondary = Color3.fromRGB(150, 150, 165),
+        Icon = Color3.fromRGB(180, 180, 200),
+        Module = Color3.fromRGB(28, 30, 38),
+        ModuleBorder = Color3.fromRGB(50, 50, 65),
+        ToggleOn = Color3.fromRGB(140, 110, 255),
+        ToggleOff = Color3.fromRGB(55, 58, 70),
+        Divider = Color3.fromRGB(45, 47, 58)
+    },
+    ["Default Light"] = {
+        Primary = Color3.fromRGB(90, 130, 255),
+        Background = Color3.fromRGB(240, 242, 248),
+        Sidebar = Color3.fromRGB(228, 232, 240),
+        Border = Color3.fromRGB(180, 185, 200),
+        Text = Color3.fromRGB(30, 32, 40),
+        TextSecondary = Color3.fromRGB(90, 95, 110),
+        Icon = Color3.fromRGB(60, 65, 80),
+        Module = Color3.fromRGB(248, 250, 255),
+        ModuleBorder = Color3.fromRGB(200, 205, 215),
+        ToggleOn = Color3.fromRGB(90, 130, 255),
+        ToggleOff = Color3.fromRGB(200, 205, 215),
+        Divider = Color3.fromRGB(210, 215, 225)
+    },
+    ["Ocean Blue"] = {
+        Primary = Color3.fromRGB(60, 180, 220),
+        Background = Color3.fromRGB(15, 25, 35),
+        Sidebar = Color3.fromRGB(12, 20, 30),
+        Border = Color3.fromRGB(40, 70, 90),
+        Text = Color3.fromRGB(220, 235, 245),
+        TextSecondary = Color3.fromRGB(130, 160, 180),
+        Icon = Color3.fromRGB(150, 200, 220),
+        Module = Color3.fromRGB(20, 32, 45),
+        ModuleBorder = Color3.fromRGB(40, 75, 100),
+        ToggleOn = Color3.fromRGB(60, 180, 220),
+        ToggleOff = Color3.fromRGB(50, 70, 85),
+        Divider = Color3.fromRGB(35, 60, 80)
+    },
+    ["Forest Green"] = {
+        Primary = Color3.fromRGB(80, 200, 120),
+        Background = Color3.fromRGB(18, 28, 22),
+        Sidebar = Color3.fromRGB(14, 22, 18),
+        Border = Color3.fromRGB(50, 90, 65),
+        Text = Color3.fromRGB(220, 240, 225),
+        TextSecondary = Color3.fromRGB(130, 170, 140),
+        Icon = Color3.fromRGB(160, 210, 175),
+        Module = Color3.fromRGB(22, 35, 26),
+        ModuleBorder = Color3.fromRGB(50, 95, 70),
+        ToggleOn = Color3.fromRGB(80, 200, 120),
+        ToggleOff = Color3.fromRGB(50, 75, 60),
+        Divider = Color3.fromRGB(35, 70, 50)
+    }
+}
+
+local function tween(obj, t, props, style, dir)
+    style = style or Enum.EasingStyle.Quad
+    dir = dir or Enum.EasingDirection.Out
+    local ti = TweenInfo.new(t, style, dir)
+    local t = game:GetService("TweenService"):Create(obj, ti, props)
+    t:Play()
+    return t
+end
+
+local function make(class, props)
+    local i = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "Parent" and k ~= "Children" then
+            i[k] = v
+        end
+    end
+    if props.Children then
+        for _, c in ipairs(props.Children) do
+            c.Parent = i
+        end
+    end
+    if props.Parent then
+        i.Parent = props.Parent
+    end
+    return i
+end
+
+local function ripple(button, color)
+    color = color or Color3.fromRGB(255, 255, 255)
+    button.MouseButton1Click:Connect(function()
+        local r = make("Frame", {
+            Parent = button,
+            BackgroundColor3 = color,
+            BackgroundTransparency = 0.5,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            ZIndex = 100,
+            ClipsDescendants = true
+        })
+        local corner = make("UICorner", {
+            Parent = r,
+            CornerRadius = UDim.new(1, 0)
+        })
+        local s = math.max(button.AbsoluteSize.X, button.AbsoluteSize.Y) * 2
+        tween(r, 0.5, {Size = UDim2.new(0, s, 0, s), BackgroundTransparency = 1})
+        task.delay(0.5, function() if r then r:Destroy() end end)
+    end)
+end
+
+local function drag(frame, handle)
+    handle = handle or frame
+    local d = false
+    local ds, sp
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            d = true
+            ds = input.Position
+            sp = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    d = false
+                end
+            end)
+        end
+    end)
+    handle.InputChanged:Connect(function(input)
+        if d and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - ds
+            frame.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+local function safeRead(path)
+    local ok, res = pcall(readfile, path)
+    if ok then return res end
+    return nil
+end
+
+local function safeWrite(path, data)
+    pcall(writefile, path, data)
+end
+
+local function rgbToTable(c)
+    return {math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255)}
+end
+
+local function tableToRgb(t)
+    return Color3.fromRGB(t[1] or 0, t[2] or 0, t[3] or 0)
+end
+
+local function configSave()
+    local data = {}
+    for k, v in pairs(GG.Config) do
+        if typeof(v) == "Color3" then
+            data[k] = {"Color", rgbToTable(v)}
+        else
+            data[k] = v
+        end
+    end
+    data.Flags = {}
+    for k, v in pairs(GG.Flags) do
+        data.Flags[k] = v
+    end
+    safeWrite("SakuraUI_Config.json", game:GetService("HttpService"):JSONEncode(data))
+end
+
+local function configLoad()
+    local raw = safeRead("SakuraUI_Config.json")
+    if not raw then return false end
+    local ok, data = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(raw)
+    end)
+    if not ok or not data then return false end
+    for k, v in pairs(data) do
+        if k == "Flags" then
+            for fk, fv in pairs(v) do
+                GG.Flags[fk] = fv
+            end
+        elseif type(v) == "table" and v[1] == "Color" then
+            GG.Config[k] = tableToRgb(v[2])
+        else
+            GG.Config[k] = v
+        end
+    end
+    return true
+end
+
+configLoad()
+
+local Connections = {}
+local function newConn(name, conn)
+    if Connections[name] then
+        Connections[name]:Disconnect()
+    end
+    Connections[name] = conn
+end
+
+local function getFlag(flag, default)
+    if GG.Flags[flag] == nil then
+        if type(default) == "boolean" then
+            GG.Flags[flag] = {false}
+        elseif type(default) == "number" then
+            GG.Flags[flag] = {default}
+        elseif type(default) == "string" then
+            GG.Flags[flag] = {default}
+        else
+            GG.Flags[flag] = {default}
+        end
+    end
+    return GG.Flags[flag][1]
+end
+
+local function setFlag(flag, val)
+    if not GG.Flags[flag] then GG.Flags[flag] = {nil} end
+    GG.Flags[flag][1] = val
+    configSave()
+end
+
+function Library:CreateTab(name, icon)
+    icon = icon or "7072719338"
+    
+    local Tab = {}
+    setmetatable(Tab, {__index = self})
+    Tab.Name = name
+    Tab.Icon = icon
+    Tab.Modules = {Left = {}, Right = {}}
+    Tab.ActiveModule = nil
+    
+    local function getIconImage(icon)
+        if type(icon) == "string" and (icon:find("rbxasset") or #icon > 0) then
+            if tonumber(icon) then
+                return "rbxassetid://" .. icon
+            end
+            return icon
+        end
+        return "rbxassetid://7072719338"
+    end
+    
+    local contentArea = self._ui.Container.ContentArea
+    local existing = contentArea:FindFirstChild("Tab_" .. name)
+    if existing then existing:Destroy() end
+    
+    local tabPage = make("Frame", {
+        Parent = contentArea,
+        Name = "Tab_" .. name,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        Visible = false
+    })
+    
+    local leftScroll = make("ScrollingFrame", {
+        Parent = tabPage,
+        Name = "LeftSection",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0.5, -4, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = GG.Config.Primary,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.None,
+        ClipsDescendants = true
+    })
+    make("UIListLayout", {
+        Parent = leftScroll,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 6),
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center
+    })
+    make("UIPadding", {
+        Parent = leftScroll,
+        PaddingTop = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 6),
+        PaddingLeft = UDim.new(0, 4),
+        PaddingRight = UDim.new(0, 4)
+    })
+    
+    local rightScroll = make("ScrollingFrame", {
+        Parent = tabPage,
+        Name = "RightSection",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0.5, -4, 1, 0),
+        Position = UDim2.new(0.5, 4, 0, 0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = GG.Config.Primary,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ClipsDescendants = true
+    })
+    make("UIListLayout", {
+        Parent = rightScroll,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 6),
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center
+    })
+    make("UIPadding", {
+        Parent = rightScroll,
+        PaddingTop = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 6),
+        PaddingLeft = UDim.new(0, 4),
+        PaddingRight = UDim.new(0, 4)
+    })
+    
+    local midLine = make("Frame", {
+        Parent = tabPage,
+        BackgroundColor3 = GG.Config.Border,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 1, 1, -16),
+        Position = UDim2.new(0.5, 0, 0, 8)
+    })
+    
+    Tab.Page = tabPage
+    Tab.LeftScroll = leftScroll
+    Tab.RightScroll = rightScroll
+    Tab._library = self
+    
+    local btn = make("TextButton", {
+        Parent = self._ui.Container.Sidebar.TabList,
+        Name = "TabBtn_" .. name,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -8, 0, 34),
+        Text = "",
+        AutoButtonColor = false,
+        LayoutOrder = #self._ui.Container.Sidebar.TabList:GetChildren() - 1
+    })
+    
+    local iconImg = make("ImageLabel", {
+        Parent = btn,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 18, 0, 18),
+        Position = UDim2.new(0, 12, 0.5, -9),
+        Image = getIconImage(icon),
+        ImageColor3 = GG.Config.Icon,
+        ScaleType = Enum.ScaleType.Fit
+    })
+    
+    local label = make("TextLabel", {
+        Parent = btn,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -42, 1, 0),
+        Position = UDim2.new(0, 38, 0, 0),
+        Text = name,
+        TextColor3 = GG.Config.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.Gotham,
+        TextSize = 13,
+        TextTransparency = 0.2
+    })
+    
+    btn.MouseEnter:Connect(function()
+        if self._ui.ActiveTab ~= Tab then
+            tween(btn, 0.15, {BackgroundTransparency = 0.85})
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if self._ui.ActiveTab ~= Tab then
+            tween(btn, 0.15, {BackgroundTransparency = 1})
+        end
+    end)
+    
+    btn.MouseButton1Click:Connect(function()
+        self:SelectTab(Tab)
+    end)
+    
+    ripple(btn, GG.Config.Primary)
+    
+    Tab._button = btn
+    Tab._icon = iconImg
+    Tab._label = label
+    self._tabs[Tab] = {page = tabPage, button = btn, icon = iconImg, label = label}
+    
+    if #self._ui.Container.Sidebar.TabList:GetChildren() <= 4 then
+        self:SelectTab(Tab)
+    end
+    
+    return Tab
+end
+
+function Library:SelectTab(tab)
+    for t, data in pairs(self._tabs) do
+        if t ~= tab then
+            data.page.Visible = false
+            tween(data.button, 0.15, {BackgroundTransparency = 1})
+            tween(data.icon, 0.2, {ImageColor3 = GG.Config.Icon})
+            tween(data.label, 0.2, {TextColor3 = GG.Config.Text, TextTransparency = 0.2})
+        end
+    end
+    
+    tab.Page.Visible = true
+    self._ui.ActiveTab = tab
+    
+    tween(tab._button, 0.15, {BackgroundTransparency = 0.85})
+    tween(tab._icon, 0.2, {ImageColor3 = GG.Config.Primary})
+    tween(tab._label, 0.2, {TextColor3 = GG.Config.Text, TextTransparency = 0})
+    
+    local btnPos = tab._button.AbsolutePosition
+    local sidebarPos = self._ui.Container.Sidebar.AbsolutePosition
+    local sidebarSize = self._ui.Container.Sidebar.AbsoluteSize
+    local relativeY = btnPos.Y - sidebarPos.Y - 17
+    tween(self._ui.Container.Sidebar.Indicator, 0.3, {Position = UDim2.new(0, 0, 0, relativeY)})
+end
+
+function Library:CreateModule(config)
+    config = config or {}
+    local side = config.Side or "Left"
+    local parent = (side == "Left") and self.Page.LeftScroll or self.Page.RightScroll
+    local layoutOrder = #parent:GetChildren()
+    
+    local Mod = {}
+    Mod.Title = config.Title or "Module"
+    Mod.Description = config.Description or ""
+    Mod.Enabled = false
+    Mod.Controls = {}
+    Mod._library = self._library
+    Mod._parent = parent
+    Mod._expanded = false
+    Mod._height = 0
+    Mod.Side = side
+    Mod.Flag = config.Flag
+    
+    local module = make("Frame", {
+        Parent = parent,
+        Name = "Mod_" .. config.Title,
+        BackgroundColor3 = GG.Config.Module,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 38),
+        ClipsDescendants = true,
+        LayoutOrder = layoutOrder
+    })
+    make("UICorner", {Parent = module, CornerRadius = UDim.new(0, 6)})
+    make("UIStroke", {
+        Parent = module,
+        Color = GG.Config.ModuleBorder,
+        Thickness = 1,
+        Transparency = 0.3,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    })
+    
+    local header = make("Frame", {
+        Parent = module,
+        Name = "Header",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 38),
+        Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 2
+    })
+    
+    local titleLabel = make("TextLabel", {
+        Parent = header,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -78, 1, 0),
+        Position = UDim2.new(0, 12, 0, 0),
+        Text = config.Title or "Module",
+        TextColor3 = GG.Config.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamSemibold,
+        TextSize = 13,
+        ZIndex = 3
+    })
+    
+    local toggleBtn = make("TextButton", {
+        Parent = header,
+        Name = "Toggle",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 22, 0, 22),
+        Position = UDim2.new(1, -30, 0.5, -11),
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 4
+    })
+    make("UICorner", {Parent = toggleBtn, CornerRadius = UDim.new(1, 0)})
+    local toggleStroke = make("UIStroke", {
+        Parent = toggleBtn,
+        Color = GG.Config.ToggleOff,
+        Thickness = 1.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    })
+    local toggleDot = make("Frame", {
+        Parent = toggleBtn,
+        BackgroundColor3 = GG.Config.ToggleOff,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 8, 0, 8),
+        Position = UDim2.new(0.5, -4, 0.5, -4),
+        ZIndex = 5
+    })
+    make("UICorner", {Parent = toggleDot, CornerRadius = UDim.new(1, 0)})
+    
+    local descLabel = nil
+    if config.Description and config.Description ~= "" then
+        descLabel = make("TextLabel", {
+            Parent = module,
+            Name = "Description",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -24, 0, 14),
+            Position = UDim2.new(0, 12, 0, 38),
+            Text = config.Description,
+            TextColor3 = GG.Config.TextSecondary,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 11,
+            TextTransparency = 0.3,
+            Visible = false,
+            ZIndex = 2
+        })
+    end
+    
+    local divider = make("Frame", {
+        Parent = module,
+        Name = "Divider",
+        BackgroundColor3 = GG.Config.Divider,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, -24, 0, 1),
+        Position = UDim2.new(0, 12, 0, 52),
+        Visible = false,
+        ZIndex = 2
+    })
+    
+    local optionsContainer = make("Frame", {
+        Parent = module,
+        Name = "Options",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 0),
+        Position = UDim2.new(0, 0, 0, 58),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        ZIndex = 2
+    })
+    make("UIListLayout", {
+        Parent = optionsContainer,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 4)
+    })
+    make("UIPadding", {
+        Parent = optionsContainer,
+        PaddingTop = UDim.new(0, 4),
+        PaddingBottom = UDim.new(0, 6),
+        PaddingLeft = UDim.new(0, 6),
+        PaddingRight = UDim.new(0, 6)
+    })
+    
+    local function calculateHeight()
+        local h = 38
+        if descLabel then h = h + 18 end
+        if optionsContainer then
+            h = h + optionsContainer.AbsoluteSize.Y + 6
+        end
+        return h
+    end
+    
+    local function updateHeight()
+        local h = calculateHeight()
+        if Mod._expanded then
+            tween(module, 0.3, {Size = UDim2.new(1, 0, 0, h)})
+        else
+            tween(module, 0.3, {Size = UDim2.new(1, 0, 0, 38)})
+        end
+    end
+    
+    local function setToggle(state, animate)
+        Mod.Enabled = state
+        if animate == nil then animate = true end
+        if state then
+            tween(toggleStroke, 0.2, {Color = GG.Config.ToggleOn})
+            tween(toggleDot, 0.2, {BackgroundColor3 = GG.Config.ToggleOn, Position = UDim2.new(0.5, 3, 0.5, -4)})
+        else
+            tween(toggleStroke, 0.2, {Color = GG.Config.ToggleOff})
+            tween(toggleDot, 0.2, {BackgroundColor3 = GG.Config.ToggleOff, Position = UDim2.new(0.5, -4, 0.5, -4)})
+        end
+    end
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        Mod._expanded = not Mod._expanded
+        if descLabel then
+            tween(descLabel, 0.2, {TextTransparency = Mod._expanded and 0.3 or 1})
+        end
+        if divider then
+            tween(divider, 0.2, {BackgroundTransparency = Mod._expanded and 0 or 1})
+        end
+        for _, c in ipairs(optionsContainer:GetChildren()) do
+            if c:IsA("GuiObject") then
+                tween(c, 0.2, {BackgroundTransparency = c.BackgroundTransparency})
+            end
+        end
+        updateHeight()
+        if config.OnToggle then
+            pcall(config.OnToggle, Mod._expanded)
+        end
+    end)
+    
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Mod._expanded = not Mod._expanded
+            if descLabel then
+                tween(descLabel, 0.2, {TextTransparency = Mod._expanded and 0.3 or 1})
+            end
+            if divider then
+                tween(divider, 0.2, {BackgroundTransparency = Mod._expanded and 0 or 1})
+            end
+            updateHeight()
+            if config.OnToggle then
+                pcall(config.OnToggle, Mod._expanded)
+            end
+        end
+    end)
+    
+    header.MouseEnter:Connect(function()
+        tween(header, 0.15, {BackgroundTransparency = 0.92})
+    end)
+    header.MouseLeave:Connect(function()
+        tween(header, 0.15, {BackgroundTransparency = 1})
+    end)
+    
+    Mod._module = module
+    Mod._header = header
+    Mod._titleLabel = titleLabel
+    Mod._descLabel = descLabel
+    Mod._divider = divider
+    Mod._options = optionsContainer
+    Mod._toggleBtn = toggleBtn
+    Mod._toggleDot = toggleDot
+    Mod._toggleStroke = toggleStroke
+    Mod._updateHeight = updateHeight
+    Mod._setToggle = setToggle
+    
+    function Mod:CreateLabel(text)
+        local lbl = make("TextLabel", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 18),
+            Text = text or "Label",
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 12,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        return lbl
+    end
+    
+    function Mod:CreateParagraph(text)
+        local p = make("TextLabel", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 30),
+            Text = text or "Paragraph",
+            TextColor3 = GG.Config.TextSecondary,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            TextWrapped = true,
+            Font = Enum.Font.Gotham,
+            TextSize = 11,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        return p
+    end
+    
+    function Mod:CreateDivider()
+        local d = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundColor3 = GG.Config.Divider,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 1),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        local wrap = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 6),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        return d
+    end
+    
+    function Mod:CreateButton(text, callback)
+        callback = callback or function() end
+        local btn = make("TextButton", {
+            Parent = optionsContainer,
+            BackgroundColor3 = GG.Config.Primary,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 28),
+            Text = text or "Button",
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 12,
+            AutoButtonColor = false,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+        btn.MouseEnter:Connect(function()
+            tween(btn, 0.15, {BackgroundTransparency = 0.2})
+        end)
+        btn.MouseLeave:Connect(function()
+            tween(btn, 0.15, {BackgroundTransparency = 0})
+        end)
+        btn.MouseButton1Click:Connect(function()
+            pcall(callback)
+        end)
+        ripple(btn, Color3.fromRGB(255, 255, 255))
+        return btn
+    end
+    
+    function Mod:CreateToggle(config)
+        config = config or {}
+        local title = config.Title or "Toggle"
+        local default = config.Default or false
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 24),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -40, 1, 0),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        
+        local switch = make("TextButton", {
+            Parent = row,
+            BackgroundColor3 = value and GG.Config.ToggleOn or GG.Config.ToggleOff,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 32, 0, 16),
+            Position = UDim2.new(1, -36, 0.5, -8),
+            Text = "",
+            AutoButtonColor = false
+        })
+        make("UICorner", {Parent = switch, CornerRadius = UDim.new(1, 0)})
+        local knob = make("Frame", {
+            Parent = switch,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 12, 0, 12),
+            Position = value and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+        })
+        make("UICorner", {Parent = knob, CornerRadius = UDim.new(1, 0)})
+        
+        local function update(v, animate)
+            value = v
+            if flag then setFlag(flag, v) end
+            if animate ~= false then
+                tween(switch, 0.2, {BackgroundColor3 = v and GG.Config.ToggleOn or GG.Config.ToggleOff})
+                tween(knob, 0.2, {Position = v and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)})
+            end
+            pcall(callback, v)
+        end
+        
+        switch.MouseButton1Click:Connect(function()
+            update(not value, true)
+        end)
+        ripple(switch, Color3.fromRGB(255, 255, 255))
+        
+        update(value, false)
+        
+        return {
+            SetValue = function(v) update(v, true) end,
+            GetValue = function() return value end
+        }
+    end
+    
+    function Mod:CreateSlider(config)
+        config = config or {}
+        local title = config.Title or "Slider"
+        local min = config.Min or 0
+        local max = config.Max or 100
+        local default = config.Default or 50
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 40),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.6, 0, 0, 16),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local valLabel = make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.4, -4, 0, 16),
+            Position = UDim2.new(0.6, 0, 0, 0),
+            Text = tostring(math.floor(value * 100) / 100),
+            TextColor3 = GG.Config.Primary,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 12
+        })
+        local bar = make("Frame", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.ToggleOff,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 4),
+            Position = UDim2.new(0, 4, 0, 28)
+        })
+        make("UICorner", {Parent = bar, CornerRadius = UDim.new(1, 0)})
+        local fill = make("Frame", {
+            Parent = bar,
+            BackgroundColor3 = GG.Config.Primary,
+            BorderSizePixel = 0,
+            Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+        })
+        make("UICorner", {Parent = fill, CornerRadius = UDim.new(1, 0)})
+        
+        local dragging = false
+        local function update(input, animate)
+            local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+            value = min + (max - min) * pos
+            value = math.floor(value * 100) / 100
+            if flag then setFlag(flag, value) end
+            if animate ~= false then
+                fill.Size = UDim2.new(pos, 0, 1, 0)
+            end
+            valLabel.Text = tostring(value)
+            pcall(callback, value)
+        end
+        
+        bar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                update(input, true)
+            end
+        end)
+        
+        newConn("slider_drag_" .. tostring(row), game:GetService("UserInputService").InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                update(input, true)
+            end
+        end))
+        
+        newConn("slider_release_" .. tostring(row), game:GetService("UserInputService").InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end))
+        
+        valLabel.Text = tostring(value)
+        fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+        
+        return {
+            SetValue = function(v)
+                value = math.clamp(v, min, max)
+                value = math.floor(value * 100) / 100
+                if flag then setFlag(flag, value) end
+                fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
+                valLabel.Text = tostring(value)
+            end,
+            GetValue = function() return value end
+        }
+    end
+    
+    function Mod:CreateDropdown(config)
+        config = config or {}
+        local title = config.Title or "Dropdown"
+        local options = config.Options or {"Option 1", "Option 2"}
+        local default = config.Default or options[1]
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        local open = false
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 50),
+            ClipsDescendants = false,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -8, 0, 16),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local btn = make("TextButton", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Background,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 24),
+            Position = UDim2.new(0, 4, 0, 18),
+            Text = "  " .. tostring(value),
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12,
+            AutoButtonColor = false
+        })
+        make("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = btn,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        make("TextLabel", {
+            Parent = btn,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 20, 1, 0),
+            Position = UDim2.new(1, -20, 0, 0),
+            Text = "▾",
+            TextColor3 = GG.Config.Icon,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        
+        local list = make("ScrollingFrame", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Module,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 0),
+            Position = UDim2.new(0, 4, 0, 44),
+            Visible = false,
+            ClipsDescendants = true,
+            ScrollBarThickness = 2,
+            ScrollBarImageColor3 = GG.Config.Primary,
+            CanvasSize = UDim2.new(0, 0, 0, #options * 22),
+            ZIndex = 50
+        })
+        make("UICorner", {Parent = list, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = list,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        make("UIListLayout", {
+            Parent = list,
+            SortOrder = Enum.SortOrder.LayoutOrder
+        })
+        
+        local optBtns = {}
+        for i, opt in ipairs(options) do
+            local optBtn = make("TextButton", {
+                Parent = list,
+                BackgroundColor3 = opt == value and GG.Config.Primary or GG.Config.Module,
+                BackgroundTransparency = opt == value and 0.5 or 0,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 22),
+                Text = "  " .. tostring(opt),
+                TextColor3 = GG.Config.Text,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                TextSize = 11,
+                AutoButtonColor = false,
+                LayoutOrder = i,
+                ZIndex = 51
+            })
+            optBtn.MouseEnter:Connect(function()
+                if opt ~= value then
+                    tween(optBtn, 0.1, {BackgroundTransparency = 0.7, BackgroundColor3 = GG.Config.Primary})
+                end
+            end)
+            optBtn.MouseLeave:Connect(function()
+                if opt ~= value then
+                    tween(optBtn, 0.1, {BackgroundTransparency = 0, BackgroundColor3 = GG.Config.Module})
+                end
+            end)
+            optBtn.MouseButton1Click:Connect(function()
+                value = opt
+                if flag then setFlag(flag, opt) end
+                btn.Text = "  " .. tostring(opt)
+                for _, b in ipairs(optBtns) do
+                    tween(b, 0.15, {BackgroundColor3 = GG.Config.Module, BackgroundTransparency = 0})
+                end
+                tween(optBtn, 0.15, {BackgroundColor3 = GG.Config.Primary, BackgroundTransparency = 0.5})
+                pcall(callback, opt)
+                task.wait(0.05)
+                open = false
+                tween(list, 0.2, {Size = UDim2.new(1, -8, 0, 0)})
+                task.wait(0.2)
+                list.Visible = false
+            end)
+            table.insert(optBtns, optBtn)
+        end
+        
+        btn.MouseButton1Click:Connect(function()
+            open = not open
+            if open then
+                list.Visible = true
+                local h = math.min(#options * 22, 100)
+                tween(list, 0.2, {Size = UDim2.new(1, -8, 0, h)})
+            else
+                tween(list, 0.2, {Size = UDim2.new(1, -8, 0, 0)})
+                task.wait(0.2)
+                list.Visible = false
+            end
+        end)
+        
+        return {
+            SetValue = function(v)
+                value = v
+                if flag then setFlag(flag, v) end
+                btn.Text = "  " .. tostring(v)
+                for i, b in ipairs(optBtns) do
+                    if options[i] == v then
+                        tween(b, 0.15, {BackgroundColor3 = GG.Config.Primary, BackgroundTransparency = 0.5})
+                    else
+                        tween(b, 0.15, {BackgroundColor3 = GG.Config.Module, BackgroundTransparency = 0})
+                    end
+                end
+            end,
+            GetValue = function() return value end
+        }
+    end
+    
+    function Mod:CreateMultiDropdown(config)
+        config = config or {}
+        local title = config.Title or "Multi Dropdown"
+        local options = config.Options or {"Option 1", "Option 2"}
+        local default = config.Default or {}
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local selected = {}
+        for _, v in ipairs(default) do selected[v] = true end
+        if flag then
+            local stored = getFlag(flag, default)
+            if type(stored) == "table" then
+                selected = {}
+                for _, v in ipairs(stored) do selected[v] = true end
+            end
+        end
+        local open = false
+        
+        local function getSelectedList()
+            local list = {}
+            for k, v in pairs(selected) do
+                if v then table.insert(list, k) end
+            end
+            return list
+        end
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 50),
+            ClipsDescendants = false,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -8, 0, 16),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local btn = make("TextButton", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Background,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 24),
+            Position = UDim2.new(0, 4, 0, 18),
+            Text = "  Select...",
+            TextColor3 = GG.Config.TextSecondary,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12,
+            AutoButtonColor = false
+        })
+        make("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = btn,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        make("TextLabel", {
+            Parent = btn,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 20, 1, 0),
+            Position = UDim2.new(1, -20, 0, 0),
+            Text = "▾",
+            TextColor3 = GG.Config.Icon,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        
+        local list = make("ScrollingFrame", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Module,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 0),
+            Position = UDim2.new(0, 4, 0, 44),
+            Visible = false,
+            ClipsDescendants = true,
+            ScrollBarThickness = 2,
+            ScrollBarImageColor3 = GG.Config.Primary,
+            CanvasSize = UDim2.new(0, 0, 0, #options * 24),
+            ZIndex = 50
+        })
+        make("UICorner", {Parent = list, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = list,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        make("UIListLayout", {Parent = list, SortOrder = Enum.SortOrder.LayoutOrder})
+        
+        local optBtns = {}
+        for i, opt in ipairs(options) do
+            local optRow = make("TextButton", {
+                Parent = list,
+                BackgroundColor3 = GG.Config.Module,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, 24),
+                Text = "",
+                AutoButtonColor = false,
+                LayoutOrder = i,
+                ZIndex = 51
+            })
+            local check = make("Frame", {
+                Parent = optRow,
+                BackgroundColor3 = selected[opt] and GG.Config.Primary or GG.Config.Background,
+                BorderSizePixel = 0,
+                Size = UDim2.new(0, 14, 0, 14),
+                Position = UDim2.new(0, 6, 0.5, -7),
+                ZIndex = 52
+            })
+            make("UICorner", {Parent = check, CornerRadius = UDim.new(0, 3)})
+            make("UIStroke", {
+                Parent = check,
+                Color = selected[opt] and GG.Config.Primary or GG.Config.Border,
+                Thickness = 1,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            })
+            make("TextLabel", {
+                Parent = check,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                Text = selected[opt] and "✓" or "",
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                Font = Enum.Font.GothamBold,
+                TextSize = 10,
+                ZIndex = 53
+            })
+            make("TextLabel", {
+                Parent = optRow,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -28, 1, 0),
+                Position = UDim2.new(0, 26, 0, 0),
+                Text = tostring(opt),
+                TextColor3 = GG.Config.Text,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                TextSize = 11,
+                ZIndex = 52
+            })
+            optRow.MouseEnter:Connect(function()
+                tween(optRow, 0.1, {BackgroundTransparency = 0.85})
+            end)
+            optRow.MouseLeave:Connect(function()
+                tween(optRow, 0.1, {BackgroundTransparency = 0})
+            end)
+            optRow.MouseButton1Click:Connect(function()
+                selected[opt] = not selected[opt]
+                tween(check, 0.15, {BackgroundColor3 = selected[opt] and GG.Config.Primary or GG.Config.Background})
+                check:FindFirstChildOfClass("UIStroke").Color = selected[opt] and GG.Config.Primary or GG.Config.Border
+                check:FindFirstChildOfClass("TextLabel").Text = selected[opt] and "✓" or ""
+                local sel = getSelectedList()
+                if #sel > 0 then
+                    btn.Text = "  " .. table.concat(sel, ", ")
+                    btn.TextColor3 = GG.Config.Text
+                else
+                    btn.Text = "  Select..."
+                    btn.TextColor3 = GG.Config.TextSecondary
+                end
+                if flag then setFlag(flag, sel) end
+                pcall(callback, sel)
+            end)
+            table.insert(optBtns, optRow)
+        end
+        
+        local sel = getSelectedList()
+        if #sel > 0 then
+            btn.Text = "  " .. table.concat(sel, ", ")
+            btn.TextColor3 = GG.Config.Text
+        end
+        
+        btn.MouseButton1Click:Connect(function()
+            open = not open
+            if open then
+                list.Visible = true
+                local h = math.min(#options * 24, 100)
+                tween(list, 0.2, {Size = UDim2.new(1, -8, 0, h)})
+            else
+                tween(list, 0.2, {Size = UDim2.new(1, -8, 0, 0)})
+                task.wait(0.2)
+                list.Visible = false
+            end
+        end)
+        
+        return {
+            GetValue = function() return getSelectedList() end
+        }
+    end
+    
+    function Mod:CreateColorPicker(config)
+        config = config or {}
+        local title = config.Title or "Color"
+        local default = config.Default or GG.Config.Primary
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        if typeof(value) == "table" then value = default end
+        local open = false
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 28),
+            ClipsDescendants = false,
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.6, 0, 1, 0),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local preview = make("TextButton", {
+            Parent = row,
+            BackgroundColor3 = value,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 32, 0, 20),
+            Position = UDim2.new(1, -36, 0.5, -10),
+            Text = "",
+            AutoButtonColor = false
+        })
+        make("UICorner", {Parent = preview, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = preview,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        
+        local picker = make("Frame", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Module,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 0),
+            Position = UDim2.new(0, 4, 0, 30),
+            Visible = false,
+            ClipsDescendants = true,
+            ZIndex = 50
+        })
+        make("UICorner", {Parent = picker, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = picker,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        
+        local hueBar = make("Frame", {
+            Parent = picker,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -16, 0, 12),
+            Position = UDim2.new(0, 8, 0, 8),
+            ZIndex = 51
+        })
+        make("UICorner", {Parent = hueBar, CornerRadius = UDim.new(0, 6)})
+        for i = 0, 11 do
+            make("Frame", {
+                Parent = hueBar,
+                BackgroundColor3 = Color3.fromHSV(i / 12, 1, 1),
+                BorderSizePixel = 0,
+                Size = UDim2.new(1 / 12, 0, 1, 0),
+                Position = UDim2.new(i / 12, 0, 0, 0),
+                ZIndex = 52
+            })
+        end
+        local hueKnob = make("Frame", {
+            Parent = hueBar,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 6, 0, 18),
+            Position = UDim2.new(0, -3, 0.5, -9),
+            ZIndex = 53
+        })
+        make("UICorner", {Parent = hueKnob, CornerRadius = UDim.new(0, 3)})
+        make("UIStroke", {Parent = hueKnob, Color = Color3.fromRGB(0, 0, 0), Thickness = 1})
+        
+        local satBox = make("Frame", {
+            Parent = picker,
+            BackgroundColor3 = value,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -16, 0, 80),
+            Position = UDim2.new(0, 8, 0, 28),
+            ZIndex = 51
+        })
+        make("UICorner", {Parent = satBox, CornerRadius = UDim.new(0, 4)})
+        make("Frame", {
+            Parent = satBox,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = 52,
+            Children = {
+                make("UIGradient", {
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(1, 0)
+                    })
+                })
+            }
+        })
+        make("Frame", {
+            Parent = satBox,
+            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = 53,
+            Children = {
+                make("UIGradient", {
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(0.5, 0.5),
+                        NumberSequenceKeypoint.new(1, 0)
+                    }),
+                    Rotation = 90
+                })
+            }
+        })
+        local satKnob = make("Frame", {
+            Parent = satBox,
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 8, 0, 8),
+            Position = UDim2.new(1, -4, 0, -4),
+            ZIndex = 54
+        })
+        make("UICorner", {Parent = satKnob, CornerRadius = UDim.new(1, 0)})
+        make("UIStroke", {Parent = satKnob, Color = Color3.fromRGB(0, 0, 0), Thickness = 1})
+        
+        local h, s, v = value:ToHSV()
+        h = h or 0
+        s = s or 1
+        v = v or 1
+        
+        local draggingHue = false
+        local draggingSat = false
+        
+        local function updateColor(animate)
+            local col = Color3.fromHSV(h, s, v)
+            value = col
+            preview.BackgroundColor3 = col
+            satBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+            if flag then setFlag(flag, col) end
+            pcall(callback, col)
+        end
+        
+        hueBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingHue = true
+                local relX = math.clamp((input.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
+                h = relX
+                hueKnob.Position = UDim2.new(relX, -3, 0.5, -9)
+                updateColor()
+            end
+        end)
+        
+        satBox.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingSat = true
+                local relX = math.clamp((input.Position.X - satBox.AbsolutePosition.X) / satBox.AbsoluteSize.X, 0, 1)
+                local relY = math.clamp((input.Position.Y - satBox.AbsolutePosition.Y) / satBox.AbsoluteSize.Y, 0, 1)
+                s = relX
+                v = 1 - relY
+                satKnob.Position = UDim2.new(relX, -4, relY, -4)
+                updateColor()
+            end
+        end)
+        
+        newConn("color_input_" .. tostring(row), game:GetService("UserInputService").InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                if draggingHue then
+                    local relX = math.clamp((input.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
+                    h = relX
+                    hueKnob.Position = UDim2.new(relX, -3, 0.5, -9)
+                    updateColor()
+                elseif draggingSat then
+                    local relX = math.clamp((input.Position.X - satBox.AbsolutePosition.X) / satBox.AbsoluteSize.X, 0, 1)
+                    local relY = math.clamp((input.Position.Y - satBox.AbsolutePosition.Y) / satBox.AbsoluteSize.Y, 0, 1)
+                    s = relX
+                    v = 1 - relY
+                    satKnob.Position = UDim2.new(relX, -4, relY, -4)
+                    updateColor()
+                end
+            end
+        end))
+        
+        newConn("color_release_" .. tostring(row), game:GetService("UserInputService").InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                draggingHue = false
+                draggingSat = false
+            end
+        end))
+        
+        preview.MouseButton1Click:Connect(function()
+            open = not open
+            if open then
+                picker.Visible = true
+                tween(picker, 0.2, {Size = UDim2.new(1, -8, 0, 120)})
+            else
+                tween(picker, 0.2, {Size = UDim2.new(1, -8, 0, 0)})
+                task.wait(0.2)
+                picker.Visible = false
+            end
+        end)
+        
+        preview.BackgroundColor3 = value
+        satBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+        hueKnob.Position = UDim2.new(h, -3, 0.5, -9)
+        satKnob.Position = UDim2.new(s, -4, 1 - v, -4)
+        
+        return {
+            SetValue = function(c)
+                value = c
+                h, s, v = c:ToHSV()
+                h = h or 0; s = s or 1; v = v or 1
+                preview.BackgroundColor3 = c
+                satBox.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                hueKnob.Position = UDim2.new(h, -3, 0.5, -9)
+                satKnob.Position = UDim2.new(s, -4, 1 - v, -4)
+                if flag then setFlag(flag, c) end
+            end,
+            GetValue = function() return value end
+        }
+    end
+    
+    function Mod:CreateTextbox(config)
+        config = config or {}
+        local title = config.Title or "Textbox"
+        local placeholder = config.Placeholder or "Type here..."
+        local default = config.Default or ""
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 40),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -8, 0, 14),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local box = make("TextBox", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Background,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, -8, 0, 22),
+            Position = UDim2.new(0, 4, 0, 16),
+            Text = tostring(value),
+            PlaceholderText = placeholder,
+            PlaceholderColor3 = GG.Config.TextSecondary,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12,
+            ClearTextOnFocus = false,
+            Text = ""
+        })
+        make("UICorner", {Parent = box, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = box,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        make("UIPadding", {Parent = box, PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6)})
+        
+        if value ~= "" then
+            box.Text = tostring(value)
+        end
+        
+        box.FocusLost:Connect(function(enterPressed)
+            value = box.Text
+            if flag then setFlag(flag, value) end
+            pcall(callback, value, enterPressed)
+        end)
+        
+        return {
+            SetValue = function(v)
+                value = v
+                box.Text = tostring(v)
+                if flag then setFlag(flag, v) end
+            end,
+            GetValue = function() return value end
+        }
+    end
+    
+    function Mod:CreateKeybind(config)
+        config = config or {}
+        local title = config.Title or "Keybind"
+        local default = config.Default or Enum.UserInputType.MouseButton2
+        local flag = config.Flag
+        local callback = config.Callback or function() end
+        local value = flag and getFlag(flag, default) or default
+        if type(value) == "string" then
+            value = Enum.UserInputType[value] or value
+        end
+        local listening = false
+        
+        local row = make("Frame", {
+            Parent = optionsContainer,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 24),
+            LayoutOrder = #optionsContainer:GetChildren()
+        })
+        make("TextLabel", {
+            Parent = row,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0.6, 0, 1, 0),
+            Position = UDim2.new(0, 4, 0, 0),
+            Text = title,
+            TextColor3 = GG.Config.Text,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        })
+        local btn = make("TextButton", {
+            Parent = row,
+            BackgroundColor3 = GG.Config.Background,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 50, 0, 20),
+            Position = UDim2.new(1, -54, 0.5, -10),
+            Text = "",
+            TextColor3 = GG.Config.Text,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 11,
+            AutoButtonColor = false
+        })
+        make("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 4)})
+        make("UIStroke", {
+            Parent = btn,
+            Color = GG.Config.Border,
+            Thickness = 1,
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        })
+        
+        local function getName(v)
+            if typeof(v) == "EnumItem" then
+                if v.EnumType == Enum.KeyCode then return v.Name end
+                if v == Enum.UserInputType.MouseButton2 then return "RMB" end
+                if v == Enum.UserInputType.MouseButton1 then return "LMB" end
+                if v == Enum.UserInputType.MouseButton3 then return "MMB" end
+            end
+            return tostring(v)
+        end
+        
+        btn.Text = getName(value)
+        
+        btn.MouseButton1Click:Connect(function()
+            listening = true
+            btn.Text = "..."
+            btn.TextColor3 = GG.Config.Primary
+        end)
+        
+        newConn("keybind_listen_" .. tostring(btn), game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if listening then
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    value = input.KeyCode
+                elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
+                       input.UserInputType == Enum.UserInputType.MouseButton2 or
+                       input.UserInputType == Enum.UserInputType.MouseButton3 then
+                    value = input.UserInputType
+                end
+                listening = false
+                btn.Text = getName(value)
+                btn.TextColor3 = GG.Config.Text
+                if flag then setFlag(flag, value) end
+                pcall(callback, value)
+                return
+            end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if value == input.KeyCode then
+                    pcall(callback, value)
+                end
+            elseif input.UserInputType == value then
+                pcall(callback, value)
+            end
+        end))
+        
+        return {
+            SetValue = function(v)
+                value = v
+                btn.Text = getName(v)
+                if flag then setFlag(flag, v) end
+            end,
+            GetValue = function() return value end
+        }
+    end
+    
+    return Mod
+end
+
+function Library:ApplyTheme(themeName)
+    local theme = Themes[themeName]
+    if not theme then return end
+    for k, v in pairs(theme) do
+        GG.Config[k] = v
+    end
+    GG.Config.Theme = themeName
+    self:UpdateColors()
+    configSave()
+end
+
+function Library:UpdateColors()
+    local ui = self._ui
+    if not ui then return end
+    
+    local function safeTween(obj, props)
+        if obj and obj.Parent then
+            tween(obj, 0.3, props)
+        end
+    end
+    
+    safeTween(ui.Container, {BackgroundColor3 = GG.Config.Background})
+    safeTween(ui.Container.Sidebar, {BackgroundColor3 = GG.Config.Sidebar})
+    safeTween(ui.Container.Sidebar.Divider, {BackgroundColor3 = GG.Config.Border})
+    safeTween(ui.Container.Sidebar.Indicator, {BackgroundColor3 = GG.Config.Primary})
+    safeTween(ui.Container.Sidebar.LogoIcon, {ImageColor3 = GG.Config.Primary})
+    safeTween(ui.Container.Sidebar.Title, {TextColor3 = GG.Config.Text})
+    safeTween(ui.Container.Sidebar.Minimize, {ImageColor3 = GG.Config.Icon})
+    safeTween(ui.Container.Stroke, {Color = GG.Config.Border})
+    
+    if ui.Blur then
+        pcall(function() ui.Blur.Size = 25 end)
+    end
+    
+    for t, data in pairs(self._tabs) do
+        safeTween(data.icon, {ImageColor3 = data == self._ui.ActiveTab and GG.Config.Primary or GG.Config.Icon})
+        safeTween(data.label, {TextColor3 = GG.Config.Text})
+        if t.LeftScroll then
+            t.LeftScroll.ScrollBarImageColor3 = GG.Config.Primary
+            t.RightScroll.ScrollBarImageColor3 = GG.Config.Primary
+        end
+    end
+end
+
+function Library.new(config)
+    config = config or {}
+    
+    local self = setmetatable({}, Library)
+    self._tabs = {}
+    self._ui_open = true
+    self._minimized = false
+    
+    local pg = game:FindService("PlayerGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local parent = game:GetService("CoreGui")
+    
+    local UIRandom = ""
+    for i = 1, 16 do
+        UIRandom = UIRandom .. string.char(math.random(65, 122))
+    end
+    
+    local screenGui = make("ScreenGui", {
+        Parent = parent,
+        Name = UIRandom,
+        ResetOnSpawn = false,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        IgnoreGuiInset = true
+    })
+    
+    pcall(function()
+        if syn and syn.protect_gui then
+            syn.protect_gui(screenGui)
+        elseif protect_gui then
+            protect_gui(screenGui)
+        elseif protectgui then
+            protectgui(screenGui)
+        end
+    end)
+    
+    local Blur = nil
+    pcall(function()
+        Blur = make("BlurEffect", {
+            Parent = game:GetService("Lighting"),
+            Size = 0,
+            Name = "LibBlur_" .. UIRandom
+        })
+    end)
+    
+    local container = make("Frame", {
+        Parent = screenGui,
+        Name = "Container",
+        BackgroundColor3 = GG.Config.Background,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 720, 0, 480),
+        Position = UDim2.new(0.5, -360, 0.5, -240),
+        ClipsDescendants = true
+    })
+    make("UICorner", {Parent = container, CornerRadius = UDim.new(0, 10)})
+    local containerStroke = make("UIStroke", {
+        Parent = container,
+        Color = GG.Config.Border,
+        Thickness = 1.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    })
+    
+    make("ImageLabel", {
+        Parent = container,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 40, 1, 40),
+        Position = UDim2.new(0, -20, 0, -20),
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.6,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(10, 10, 118, 118),
+        ZIndex = 0
+    })
+    
+    drag(container, container)
+    
+    local sidebar = make("Frame", {
+        Parent = container,
+        Name = "Sidebar",
+        BackgroundColor3 = GG.Config.Sidebar,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 180, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 3,
+        ClipsDescendants = true
+    })
+    make("UICorner", {Parent = sidebar, CornerRadius = UDim.new(0, 10)})
+    make("Frame", {
+        Parent = sidebar,
+        BackgroundColor3 = GG.Config.Sidebar,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 15, 1, 0),
+        Position = UDim2.new(1, -15, 0, 0),
+        ZIndex = 3
+    })
+    
+    local logoFrame = make("Frame", {
+        Parent = sidebar,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 50),
+        Position = UDim2.new(0, 0, 0, 0),
+        ZIndex = 4
+    })
+    
+    local logoIcon = make("ImageLabel", {
+        Parent = logoFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 22, 0, 22),
+        Position = UDim2.new(0, 12, 0.5, -11),
+        Image = "rbxassetid://7072719338",
+        ImageColor3 = GG.Config.Primary,
+        ScaleType = Enum.ScaleType.Fit,
+        ZIndex = 5
+    })
+    
+    local title = make("TextLabel", {
+        Parent = logoFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -80, 1, 0),
+        Position = UDim2.new(0, 42, 0, 0),
+        Text = config.Title or "My UI",
+        TextColor3 = GG.Config.Text,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        ZIndex = 5
+    })
+    
+    local minimizeBtn = make("ImageButton", {
+        Parent = logoFrame,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 18, 0, 18),
+        Position = UDim2.new(1, -28, 0.5, -9),
+        Image = "rbxassetid://7072725342",
+        ImageColor3 = GG.Config.Icon,
+        ScaleType = Enum.ScaleType.Fit,
+        ZIndex = 5
+    })
+    make("UICorner", {Parent = minimizeBtn, CornerRadius = UDim.new(0, 4)})
+    ripple(minimizeBtn, GG.Config.Primary)
+    
+    local sidebarDivider = make("Frame", {
+        Parent = sidebar,
+        Name = "Divider",
+        BackgroundColor3 = GG.Config.Border,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, -24, 0, 1),
+        Position = UDim2.new(0, 12, 0, 50),
+        ZIndex = 4
+    })
+    
+    local tabList = make("ScrollingFrame", {
+        Parent = sidebar,
+        Name = "TabList",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, -100),
+        Position = UDim2.new(0, 0, 0, 55),
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = GG.Config.Primary,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ClipsDescendants = true
+    })
+    make("UIListLayout", {
+        Parent = tabList,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2)
+    })
+    make("UIPadding", {
+        Parent = tabList,
+        PaddingTop = UDim.new(0, 4),
+        PaddingLeft = UDim.new(0, 4),
+        PaddingRight = UDim.new(0, 4)
+    })
+    
+    local indicator = make("Frame", {
+        Parent = tabList,
+        Name = "Indicator",
+        BackgroundColor3 = GG.Config.Primary,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 3, 0, 28),
+        Position = UDim2.new(0, 0, 0, 4),
+        ZIndex = 5
+    })
+    make("UICorner", {Parent = indicator, CornerRadius = UDim.new(0, 2)})
+    
+    local contentArea = make("Frame", {
+        Parent = container,
+        Name = "ContentArea",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -188, 1, -12),
+        Position = UDim2.new(0, 188, 0, 6),
+        ClipsDescendants = true
+    })
+    
+    self._ui = {
+        ScreenGui = screenGui,
+        Container = container,
+        Blur = Blur,
+        ActiveTab = nil,
+        Container = {
+            Container = container,
+            Stroke = containerStroke,
+            Sidebar = sidebar,
+            ContentArea = contentArea,
+            Handler = logoFrame
+        }
+    }
+    self._ui.Container = container
+    self._ui.Stroke = containerStroke
+    self._ui.Sidebar = sidebar
+    self._ui.ContentArea = contentArea
+    self._ui.Handler = logoFrame
+    self._ui.Sidebar.LogoIcon = logoIcon
+    self._ui.Sidebar.Title = title
+    self._ui.Sidebar.Minimize = minimizeBtn
+    self._ui.Sidebar.TabList = tabList
+    self._ui.Sidebar.Indicator = indicator
+    self._ui.Sidebar.Divider = sidebarDivider
+    self._ui.LogoFrame = logoFrame
+    
+    newConn("toggle_key", game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
+            self._ui_open = not self._ui_open
+            self:ChangeVisibility(self._ui_open)
+        end
+    end))
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        self._minimized = not self._minimized
+        if self._minimized then
+            tween(container, 0.35, {
+                Size = UDim2.new(0, 180, 0, 50),
+                Position = UDim2.new(container.Position.X.Scale, container.Position.X.Offset, 0.5, -25)
+            })
+            tween(contentArea, 0.2, {BackgroundTransparency = 1})
+            task.wait(0.2)
+            contentArea.Visible = false
+            if Blur then tween(Blur, 0.3, {Size = 0}) end
+        else
+            contentArea.Visible = true
+            tween(contentArea, 0.2, {BackgroundTransparency = 0})
+            tween(container, 0.35, {
+                Size = UDim2.new(0, 720, 0, 480),
+                Position = UDim2.new(0.5, -360, 0.5, -240)
+            })
+            if Blur then tween(Blur, 0.3, {Size = 25}) end
+        end
+    end)
+    
+    setmetatable(self, {__index = Library})
+    return self
+end
+
+function Library:ChangeVisibility(state)
+    local ui = self._ui
+    if state then
+        tween(ui.Container, 0.3, {Size = UDim2.new(0, 720, 0, 480)})
+    else
+        tween(ui.Container, 0.3, {Size = UDim2.new(0, 0, 0, 0)})
+    end
+end
+
+function Library:Destroy()
+    if self._ui.ScreenGui then self._ui.ScreenGui:Destroy() end
+    if self._ui.Blur then self._ui.Blur:Destroy() end
+    for k, _ in pairs(Connections) do
+        if Connections[k] then Connections[k]:Disconnect() end
+    end
+end
+
+return Library= settingsTab:CreateModule({
+        Title = "Themes",
+        Description = "Quick theme presets",
+        Side = "Right"
+    })
+    
+    -- Sakura Light button
+    themeMod:CreateButton("🌸 Sakura Light", function()
+        self.Settings:ApplyTheme("Sakura Light")
+        self:UpdateThemeColors()
+    end)
+    
+    -- Sakura Dark button
+    themeMod:CreateButton("🌙 Sakura Dark", function()
+        self.Settings:ApplyTheme("Sakura Dark")
+        self:UpdateThemeColors()
+    end)
+    
+    -- Divider
+    themeMod:CreateDivider()
+    
+    -- Information
+    themeMod:CreateLabel("Sakura UI v1.0")
+    themeMod:CreateParagraph("A Roblox UI Library inspired by the beauty of cherry blossoms. All settings are automatically saved.")
+    
+    return settingsTab
+end
+
+function SakuraUI:UpdateThemeColors()
+    -- Update main frame colors
+    TweenService:Create(self.MainFrame, TweenInfo.new(0.3), {
+        BackgroundColor3 = self.Settings:Get("Background")
+    }):Play()
+    TweenService:Create(self.MainStroke, TweenInfo.new(0.3), {
+        Color = self.Settings:Get("Border")
+    }):Play()
+    
+    -- Update sidebar
+    local sidebarColor = self.Settings:Get("Sidebar") or self.Settings:Get("Background")
+    TweenService:Create(self.Sidebar, TweenInfo.new(0.3), {
+        BackgroundColor3 = sidebarColor
+    }):Play()
+    TweenService:Create(self.SidebarCover, TweenInfo.new(0.3), {
+        BackgroundColor3 = sidebarColor
+    }):Play()
+    
+    -- Update sidebar divider
+    TweenService:Create(self.SidebarDivider, TweenInfo.new(0.3), {
+        BackgroundColor3 = self.Settings:Get("Border")
+    }):Play()
+    
+    -- Update indicator
+    TweenService:Create(self.TabIndicator, TweenInfo.new(0.3), {
+        BackgroundColor3 = self.Settings:Get("Primary")
+    }):Play()
+    
+    -- Update logo icon color
+    TweenService:Create(self.LogoIcon, TweenInfo.new(0.3), {
+        TextColor3 = self.Settings:Get("Primary")
+    }):Play()
+    
+    -- Update title color
+    TweenService:Create(self.UITitle, TweenInfo.new(0.3), {
+        TextColor3 = self.Settings:Get("Text")
+    }):Play()
+    
+    -- Update minimize button
+    TweenService:Create(self.MinimizeBtn, TweenInfo.new(0.3), {
+        ImageColor3 = self.Settings:Get("Icon")
+    }):Play()
+    
+    -- Update tab buttons
+    for _, data in pairs(self.TabButtons) do
+        TweenService:Create(data.Icon, TweenInfo.new(0.3), {
+            TextColor3 = self.Settings:Get("Icon")
+        }):Play()
+        TweenService:Create(data.Label, TweenInfo.new(0.3), {
+            TextColor3 = self.Settings:Get("Text")
+        }):Play()
+    end
+    
+    -- Update scrollbar colors
+    for _, tab in ipairs(self.Tabs) do
+        tab.LeftSection.ScrollBarImageColor3 = self.Settings:Get("Primary")
+        tab.RightSection.ScrollBarImageColor3 = self.Settings:Get("Primary")
+    end
+    
+    -- Update module backgrounds within tabs
+    for _, tab in ipairs(self.Tabs) do
+        for _, side in ipairs({"Left", "Right"}) do
+            for _, mod in ipairs(tab.Modules[side]) do
+                if mod.Frame then
+                    local moduleColor = self.Settings:Get("Module") or 
+                        (self.Settings:Get("DarkUI") and Color3.fromRGB(40, 32, 40) or Color3.fromRGB(255, 240, 243))
+                    local moduleBorder = self.Settings:Get("ModuleBorder") or
+                        (self.Settings:Get("DarkUI") and Color3.fromRGB(60, 45, 55) or Color3.fromRGB(255, 200, 210))
+                    
+                    TweenService:Create(mod.Frame, TweenInfo.new(0.3), {
+                        BackgroundColor3 = moduleColor
+                    }):Play()
+                    if mod.Border then
+                        TweenService:Create(mod.Border, TweenInfo.new(0.3), {
+                            Color = moduleBorder
+                        }):Play()
+                    end
+                    
+                    -- Update child elements
+                    if mod.TitleLabel then
+                        TweenService:Create(mod.TitleLabel, TweenInfo.new(0.3), {
+                            TextColor3 = self.Settings:Get("Text")
+                        }):Play()
+                    end
+                    if mod.DescLabel then
+                        TweenService:Create(mod.DescLabel, TweenInfo.new(0.3), {
+                            TextColor3 = self.Settings:Get("TextSecondary") or Color3.fromRGB(180, 120, 120)
+                        }):Play()
+                    end
+                    if mod.Divider then
+                        TweenService:Create(mod.Divider, TweenInfo.new(0.3), {
+                            BackgroundColor3 = self.Settings:Get("Divider")
+                        }):Play()
+                    end
+                    if mod.ToggleBtn then
+                        TweenService:Create(mod.ToggleBtn, TweenInfo.new(0.3), {
+                            ImageColor3 = self.Settings:Get("Icon")
+                        }):Play()
+                    end
+                end
+            end
+        end
+    end
+end
+
+--[[
+    Return the library
+]]
+return SakuraUI
